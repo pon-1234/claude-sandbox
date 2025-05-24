@@ -1,4 +1,11 @@
 name: Claude Assistant
+
+# ❶ ルートに **permissions** を置く（jobs: の外）
+permissions:
+  id-token: write         # ← これが無いと OIDC 変数が生成されない
+  contents: write         # PR へのコミット／push 用
+  pull-requests: write    # PR 作成・Approve 用
+
 on:
   issue_comment:
     types: [created]
@@ -11,10 +18,12 @@ on:
 
 jobs:
   claude-response:
-    if: contains(github.event.comment.body, '@claude')   # デフォルトは @claude
+    # ※ if: 〜 を使うならここ
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4       # ← 無くても動くが差分取得に便利
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # allowed_tools を空にしてレビュー専用にすると安全
+          # github_token を明示するなら↓
+          # github_token: ${{ secrets.GITHUB_TOKEN }}
