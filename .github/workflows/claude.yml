@@ -1,10 +1,11 @@
 name: Claude Assistant
 
-# OIDC と書き込み系 Action が動く最低限の権限
+# Claude がコードを書いて push するには write 権限 + OIDC が必要
 permissions:
-  id-token: write      # ← これが無いと今回のエラー
-  contents: write      # Claude がファイルを push する場合に必要
-  pull-requests: write # PR へのコメントやレビューをさせるなら
+  contents: write
+  pull-requests: write
+  issues: write         # issue への返信もさせたい場合
+  id-token: write       # OIDC で GitHub App トークンを取る
 
 on:
   issue_comment:
@@ -14,10 +15,19 @@ on:
 
 jobs:
   claude-response:
+    if: contains(github.event.comment.body, '@claude')
     runs-on: ubuntu-latest
+
     steps:
+      # ① リポジトリを clone（必須！）
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 既存履歴も使うので全部取るのが安全
+
+      # ② Claude Code Action を実行
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # github_token は **通常不要**。
-          # 独自 GitHub App を使う人だけ指定します
+          # github_token を **自前で用意していなければ指定不要**。
+          # Claude GitHub App + OIDC で自動取得されます
