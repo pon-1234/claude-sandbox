@@ -1,13 +1,15 @@
-# .github/workflows/claude.yml  ← jobs: より「上」に置く！
 name: Claude Assistant
 
-permissions:                # ルート階層
-  id-token: write           # ★ OIDC には必須 ★
-  contents: write           # PR へ push
-  pull-requests: write      # PR 作成・Approve
+# OIDC と書き込み系 Action が動く最低限の権限
+permissions:
+  id-token: write      # ← これが無いと今回のエラー
+  contents: write      # Claude がファイルを push する場合に必要
+  pull-requests: write # PR へのコメントやレビューをさせるなら
 
 on:
   issue_comment:
+    types: [created]
+  pull_request_review_comment:
     types: [created]
 
 jobs:
@@ -17,3 +19,5 @@ jobs:
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # github_token は **通常不要**。
+          # 独自 GitHub App を使う人だけ指定します
